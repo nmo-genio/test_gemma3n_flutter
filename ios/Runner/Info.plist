@@ -45,5 +45,10 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- Voice-to-Voice permissions -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app uses the microphone to provide voice-to-voice AI chat functionality with your local Gemma 3n model.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>This app uses speech recognition to convert your voice input to text for the AI chat functionality.</string>
 </dict>
 </plist>

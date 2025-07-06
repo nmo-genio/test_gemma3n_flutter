@@ -45,8 +45,10 @@ dependencies:
   device_info_plus: ^9.1.1
   package_info_plus: ^4.2.0
 
-  # Audio Recording (for Hour 2 - later)
-  # flutter_sound: ^9.2.13
+  # Voice-to-Voice Interface
+  record: ^5.0.4                    # Audio recording
+  speech_to_text: ^7.1.0            # STT with offline support
+  flutter_tts: ^4.0.2               # TTS with offline support
 
 dev_dependencies:
   flutter_test:
@@ -75,3 +77,7 @@ flutter:
   # Remove fonts section for now - using system fonts
   # fonts:
   #   - family: Roboto
+
+dependency_overrides:
+  # Pin record_platform_interface below 1.3.0 until record_linux plugin implements startStream
+  record_platform_interface: ">=1.2.0 <1.3.0"

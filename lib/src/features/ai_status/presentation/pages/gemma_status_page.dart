@@ -14,6 +14,7 @@ import '../widgets/memory_usage_card.dart';
 import '../widgets/performance_metrics_card.dart';
 import '../widgets/processor_utilization_card.dart';
 import '../widgets/chat_interface.dart';
+import '../widgets/voice_to_voice_widget.dart';
 
 class GemmaStatusPage extends ConsumerStatefulWidget {
   const GemmaStatusPage({super.key});
@@ -377,6 +378,10 @@ class _GemmaStatusPageState extends ConsumerState<GemmaStatusPage> {
                   ),
                 ),
               ] else ...[
+                // Voice-to-voice interface
+                const VoiceToVoiceWidget(),
+                const SizedBox(height: 16),
+                
                 // Chat interface with fixed sizing
                 _buildChatInterface(),
               ],
