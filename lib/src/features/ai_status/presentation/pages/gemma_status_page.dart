@@ -13,6 +13,7 @@ import '../widgets/system_info_card.dart';
 import '../widgets/memory_usage_card.dart';
 import '../widgets/performance_metrics_card.dart';
 import '../widgets/processor_utilization_card.dart';
+import '../widgets/chat_interface.dart';
 
 class GemmaStatusPage extends ConsumerStatefulWidget {
   const GemmaStatusPage({super.key});
@@ -257,106 +258,14 @@ class _GemmaStatusPageState extends ConsumerState<GemmaStatusPage> {
     }
   }
 
-  // Build simplified chat interface to avoid overflow
+  // Build chat interface using reusable widget
   Widget _buildChatInterface() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Prompt input
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Ask Gemma 3n E4B',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _promptController,
-                  decoration: const InputDecoration(
-                    labelText: 'Enter your prompt...',
-                    hintText: 'e.g., "Explain quantum computing"',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.all(12),
-                  ),
-                  maxLines: 2,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _generateText(),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _isLoading ? null : _generateText,
-                    icon: _isLoading
-                        ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                        : const Icon(Icons.send),
-                    label: const Text('Generate with Gemma 3n'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Response area - fixed height
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.chat_bubble_outline, color: Colors.green),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Gemma 3n Response',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ],
-                ),
-                const Divider(),
-                Container(
-                  height: 180, // Fixed height to prevent overflow
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12.0),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[50],
-                    borderRadius: BorderRadius.circular(8.0),
-                    border: Border.all(color: Colors.grey[300]!),
-                  ),
-                  child: SingleChildScrollView(
-                    controller: _responseScrollController,
-                    child: SelectableText(
-                      _response.isEmpty
-                          ? 'Responses will appear here...'
-                          : _response,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+    return ChatInterface(
+      promptController: _promptController,
+      responseScrollController: _responseScrollController,
+      response: _response,
+      isLoading: _isLoading,
+      onGenerate: _generateText,
     );
   }
 
