@@ -99,7 +99,12 @@ class VoiceService {
       );
 
       _isRecording = true;
-      _recordingStateController?.add(VoiceRecordingState.recording);
+      
+      // Only add to stream if controller exists and is not closed
+      if (_recordingStateController != null && !_recordingStateController!.isClosed) {
+        _recordingStateController!.add(VoiceRecordingState.recording);
+      }
+      
       _logger.i('Started recording audio');
       
       return true;
@@ -114,20 +119,34 @@ class VoiceService {
     try {
       if (!_isRecording) {
         _logger.w('Not recording');
-        return null;
+        return _currentRecordingPath; // Return the last recorded path even if not currently recording
       }
 
       final path = await _audioRecorder.stop();
       _isRecording = false;
-      _recordingStateController?.add(VoiceRecordingState.stopped);
       
-      _logger.i('Stopped recording audio: $path');
-      return path ?? _currentRecordingPath;
+      // Update the current recording path if we got a new one
+      if (path != null && path.isNotEmpty) {
+        _currentRecordingPath = path;
+      }
+      
+      // Only add to stream if controller exists and is not closed
+      if (_recordingStateController != null && !_recordingStateController!.isClosed) {
+        _recordingStateController!.add(VoiceRecordingState.stopped);
+      }
+      
+      _logger.i('Stopped recording audio: $_currentRecordingPath');
+      return _currentRecordingPath;
     } catch (e) {
       _logger.e('Failed to stop recording', error: e);
       _isRecording = false;
-      _recordingStateController?.add(VoiceRecordingState.error);
-      return null;
+      
+      // Only add to stream if controller exists and is not closed
+      if (_recordingStateController != null && !_recordingStateController!.isClosed) {
+        _recordingStateController!.add(VoiceRecordingState.error);
+      }
+      
+      return _currentRecordingPath; // Return the last known path even on error
     }
   }
 
@@ -169,7 +188,12 @@ class VoiceService {
       );
 
       _isListening = true;
-      _recordingStateController?.add(VoiceRecordingState.listening);
+      
+      // Only add to stream if controller exists and is not closed
+      if (_recordingStateController != null && !_recordingStateController!.isClosed) {
+        _recordingStateController!.add(VoiceRecordingState.listening);
+      }
+      
       _logger.i('Started listening for speech');
       
       return true;
@@ -185,7 +209,12 @@ class VoiceService {
       if (_isListening) {
         await _speechToText.stop();
         _isListening = false;
-        _recordingStateController?.add(VoiceRecordingState.stopped);
+        
+        // Only add to stream if controller exists and is not closed
+        if (_recordingStateController != null && !_recordingStateController!.isClosed) {
+          _recordingStateController!.add(VoiceRecordingState.stopped);
+        }
+        
         _logger.i('Stopped listening for speech');
       }
     } catch (e) {

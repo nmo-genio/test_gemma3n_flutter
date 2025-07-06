@@ -7,6 +7,8 @@ class ChatInterface extends StatelessWidget {
   final String response;
   final bool isLoading;
   final VoidCallback onGenerate;
+  final String? hintText;
+  final String? buttonText;
 
   const ChatInterface({
     super.key,
@@ -15,6 +17,8 @@ class ChatInterface extends StatelessWidget {
     required this.response,
     required this.isLoading,
     required this.onGenerate,
+    this.hintText,
+    this.buttonText,
   });
 
   @override
@@ -35,11 +39,11 @@ class ChatInterface extends StatelessWidget {
                 const SizedBox(height: 12),
                 TextField(
                   controller: promptController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Enter your prompt...',
-                    hintText: 'e.g., "Explain quantum computing", "Write a story about AI"',
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.all(12),
+                    hintText: hintText ?? 'e.g., "Explain quantum computing", "Write a story about AI"',
+                    border: const OutlineInputBorder(),
+                    contentPadding: const EdgeInsets.all(12),
                   ),
                   maxLines: 2, // Reduced from 3 to 2 lines
                   textInputAction: TextInputAction.send,
@@ -57,7 +61,7 @@ class ChatInterface extends StatelessWidget {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                         : const Icon(Icons.send),
-                    label: const Text('Generate with Gemma 3n'),
+                    label: Text(buttonText ?? 'Generate with Gemma 3n'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),

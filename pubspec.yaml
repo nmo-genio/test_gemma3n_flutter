@@ -49,6 +49,7 @@ dependencies:
   record: ^5.0.4                    # Audio recording
   speech_to_text: ^7.1.0            # STT with offline support
   flutter_tts: ^4.0.2               # TTS with offline support
+  audioplayers: ^6.0.0              # Audio playback
 
 dev_dependencies:
   flutter_test:

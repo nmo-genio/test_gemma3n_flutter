@@ -188,11 +188,22 @@ class MainActivity: FlutterActivity() {
         aiEdgeScope.launch {
             try {
                 val startTime = System.currentTimeMillis()
-                delay(maxOf(1000, prompt.length * 50).toLong())
-                val response = "Generated text for: $prompt"
+                delay(maxOf(1500, prompt.length * 30).toLong()) // More realistic timing
+                
+                // Enhanced mock responses based on prompt analysis
+                val response = generateMockResponse(prompt)
                 val endTime = System.currentTimeMillis()
+                val inferenceTime = endTime - startTime
+                val tokensPerSecond = (response.split(" ").size * 1000.0 / inferenceTime).toInt()
+                
                 withContext(Dispatchers.Main) {
-                    result.success(mapOf("success" to true, "text" to response, "inferenceTime" to (endTime - startTime), "modelType" to "Gemma 3n E4B"))
+                    result.success(mapOf(
+                        "success" to true, 
+                        "text" to response, 
+                        "inferenceTimeMs" to inferenceTime,
+                        "tokensPerSecond" to tokensPerSecond,
+                        "modelType" to "Gemma 3n E4B"
+                    ))
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -200,6 +211,85 @@ class MainActivity: FlutterActivity() {
                 }
             }
         }
+    }
+    
+    private fun generateMockResponse(prompt: String): String {
+        val lowerPrompt = prompt.lowercase()
+        
+        return when {
+            // Lesson analysis responses
+            lowerPrompt.contains("analyze") && lowerPrompt.contains("transcript") -> {
+                "Based on your lesson transcript, I can identify several key learning points:\n\n" +
+                "• Clear explanation structure with good examples\n" +
+                "• Opportunities to add more interactive elements\n" +
+                "• Consider breaking complex concepts into smaller steps\n" +
+                "• Overall delivery pace seems appropriate for learners\n\n" +
+                "Would you like me to suggest specific improvements for any particular section?"
+            }
+            
+            // Educational questions
+            lowerPrompt.contains("explain") || lowerPrompt.contains("what is") -> {
+                "Let me explain this concept step by step:\n\n" +
+                "1. First, let's establish the foundation - ${extractTopic(prompt)}\n" +
+                "2. The key principle here is understanding the relationship between components\n" +
+                "3. This applies in real-world scenarios when you encounter similar problems\n\n" +
+                "Would you like me to provide a specific example or dive deeper into any aspect?"
+            }
+            
+            // Programming questions
+            lowerPrompt.contains("code") || lowerPrompt.contains("program") || lowerPrompt.contains("function") -> {
+                "Here's how to approach this programming concept:\n\n" +
+                "```\n// Example implementation\nfunction example() {\n    // Key logic here\n    return result;\n}\n```\n\n" +
+                "Key considerations:\n• Error handling\n• Performance optimization\n• Code readability\n\n" +
+                "Try implementing this step by step and let me know if you need clarification!"
+            }
+            
+            // Math questions
+            lowerPrompt.contains("math") || lowerPrompt.contains("calculate") || lowerPrompt.contains("solve") -> {
+                "Let's solve this step by step:\n\n" +
+                "Step 1: Identify what we're looking for\n" +
+                "Step 2: Apply the appropriate formula or method\n" +
+                "Step 3: Work through the calculation\n" +
+                "Step 4: Verify our answer makes sense\n\n" +
+                "Mathematical reasoning is about understanding the 'why' behind each step. Would you like me to explain the underlying principle?"
+            }
+            
+            // Learning/study questions
+            lowerPrompt.contains("learn") || lowerPrompt.contains("study") || lowerPrompt.contains("understand") -> {
+                "Great question about learning! Here's my educational approach:\n\n" +
+                "🎯 Focus on understanding core concepts first\n" +
+                "📚 Build knowledge progressively from basics to advanced\n" +
+                "🔄 Practice with varied examples to reinforce learning\n" +
+                "💡 Connect new information to what you already know\n\n" +
+                "Active learning works best - try explaining concepts back to me or asking follow-up questions!"
+            }
+            
+            // Science questions
+            lowerPrompt.contains("science") || lowerPrompt.contains("physics") || lowerPrompt.contains("chemistry") -> {
+                "In science, we use systematic observation and analysis:\n\n" +
+                "Hypothesis: Based on your question about ${extractTopic(prompt)}\n" +
+                "Evidence: Scientific principles show us that...\n" +
+                "Application: This applies to real-world situations because...\n" +
+                "Conclusion: The key takeaway for understanding this concept\n\n" +
+                "Science is about curiosity and questioning - what aspect interests you most?"
+            }
+            
+            // General educational response
+            else -> {
+                "I understand you're asking about ${extractTopic(prompt)}. As your AI tutor, let me help you explore this topic:\n\n" +
+                "📖 This concept connects to broader learning themes\n" +
+                "🔍 Let's examine the key components and relationships\n" +
+                "💭 Consider how this applies to your current studies\n" +
+                "🎓 Building understanding requires both theory and practice\n\n" +
+                "What specific aspect would you like to explore further? I'm here to guide your learning journey!"
+            }
+        }
+    }
+    
+    private fun extractTopic(prompt: String): String {
+        // Simple topic extraction - get the main subject
+        val words = prompt.split(" ").filter { it.length > 3 }
+        return if (words.isNotEmpty()) words.take(3).joinToString(" ") else "this topic"
     }
 
     private fun getMemoryUsage(result: MethodChannel.Result) {
