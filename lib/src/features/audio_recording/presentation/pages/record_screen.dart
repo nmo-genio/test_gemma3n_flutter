@@ -516,7 +516,7 @@ class _RecordScreenState extends State<RecordScreen> {
       _showSnackBar('Processing with AI...');
 
       // Step 2: Send transcript to Gemma 3n
-      final aiResult = await AIEdgeService.generateText(
+      final aiResult = await AIEdgeService.generateTextWithMetrics(
         'Please analyze this lesson transcript and provide helpful insights, corrections, or summaries: "$transcriptResult"'
       );
 

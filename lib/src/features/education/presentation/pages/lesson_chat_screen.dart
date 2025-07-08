@@ -103,7 +103,7 @@ class _LessonChatScreenState extends ConsumerState<LessonChatScreen> with Single
     try {
       final systemInfo = await AIEdgeService.getSystemInfo();
       setState(() {
-        _isModelReady = systemInfo['isInitialized'] ?? false;
+        _isModelReady = systemInfo['modelReady'] ?? false;
       });
     } catch (e) {
       _logger.e('Error checking model status', error: e);
@@ -131,7 +131,7 @@ class _LessonChatScreenState extends ConsumerState<LessonChatScreen> with Single
       // Include lesson context in the prompt
       final contextualPrompt = '$_lessonContext\n\nSTUDENT QUESTION: $prompt\n\nPlease provide a helpful educational response based on the lesson content above.';
       
-      final result = await AIEdgeService.generateText(contextualPrompt);
+      final result = await AIEdgeService.generateTextWithMetrics(contextualPrompt);
 
       if (result['success'] == true) {
         setState(() {

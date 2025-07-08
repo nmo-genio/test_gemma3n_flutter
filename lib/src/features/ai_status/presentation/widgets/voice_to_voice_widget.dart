@@ -96,51 +96,59 @@ class _VoiceToVoiceWidgetState extends ConsumerState<VoiceToVoiceWidget>
         _statusMessage = 'Initializing voice services...';
       });
 
-      // Initialize voice service
-      final voiceInitialized = await _voiceService.initialize();
-      if (!voiceInitialized) {
-        setState(() {
-          _statusMessage = 'Failed to initialize voice recognition';
-        });
-        return;
-      }
+      // Run initialization in microtask to avoid blocking UI
+      await Future.microtask(() async {
+        // Initialize services in parallel to reduce blocking time
+        final results = await Future.wait([
+          _voiceService.initialize(),
+          _ttsService.initialize(),
+        ]);
 
-      // Initialize TTS service
-      final ttsInitialized = await _ttsService.initialize();
-      if (!ttsInitialized) {
-        setState(() {
-          _statusMessage = 'Failed to initialize text-to-speech';
-        });
-        return;
-      }
+        final voiceInitialized = results[0];
+        final ttsInitialized = results[1];
 
-      // Set up stream listeners
-      _transcriptionSubscription = _voiceService.transcriptionStream?.listen((transcription) {
-        setState(() {
-          _currentTranscription = transcription;
-        });
-      });
+        if (!voiceInitialized) {
+          setState(() {
+            _statusMessage = 'Failed to initialize voice recognition';
+          });
+          return;
+        }
 
-      _recordingStateSubscription = _voiceService.recordingStateStream?.listen((state) {
-        setState(() {
-          _recordingState = state;
-          _isRecording = state == VoiceRecordingState.recording;
-          _isListening = state == VoiceRecordingState.listening;
-        });
-        _updateAnimations();
-      });
+        if (!ttsInitialized) {
+          setState(() {
+            _statusMessage = 'Failed to initialize text-to-speech';
+          });
+          return;
+        }
 
-      _ttsStateSubscription = _ttsService.stateStream?.listen((state) {
-        setState(() {
-          _ttsState = state;
-          _isSpeaking = state == TTSState.speaking;
+        // Set up stream listeners
+        _transcriptionSubscription = _voiceService.transcriptionStream?.listen((transcription) {
+          setState(() {
+            _currentTranscription = transcription;
+          });
         });
-        _updateAnimations();
-      });
 
-      setState(() {
-        _isInitialized = true;
-        _statusMessage = 'Voice services ready. Tap to start voice chat.';
+        _recordingStateSubscription = _voiceService.recordingStateStream?.listen((state) {
+          setState(() {
+            _recordingState = state;
+            _isRecording = state == VoiceRecordingState.recording;
+            _isListening = state == VoiceRecordingState.listening;
+          });
+          _updateAnimations();
+        });
+
+        _ttsStateSubscription = _ttsService.stateStream?.listen((state) {
+          setState(() {
+            _ttsState = state;
+            _isSpeaking = state == TTSState.speaking;
+          });
+          _updateAnimations();
+        });
+
+        setState(() {
+          _isInitialized = true;
+          _statusMessage = 'Voice services ready. Tap to start voice chat.';
+        });
       });
 
       _logger.i('Voice-to-voice services initialized successfully');
@@ -238,7 +246,7 @@ class _VoiceToVoiceWidgetState extends ConsumerState<VoiceToVoiceWidget>
       _logger.i('Processing transcription: $transcription');
 
       // Send to Gemma 3n model
-      final result = await AIEdgeService.generateText(transcription);
+      final result = await AIEdgeService.generateTextWithMetrics(transcription);
 
       if (result['success'] == true) {
         final response = result['text'] ?? 'No response generated';

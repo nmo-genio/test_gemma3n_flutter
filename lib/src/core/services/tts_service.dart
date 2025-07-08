@@ -42,62 +42,65 @@ class TTSService {
     try {
       _logger.i('Initializing TTS service...');
       
-      // Initialize stream controllers
-      _stateController = StreamController<TTSState>.broadcast();
-      _progressController = StreamController<String>.broadcast();
+      // Run initialization in microtask to avoid blocking UI
+      await Future.microtask(() async {
+        // Initialize stream controllers
+        _stateController = StreamController<TTSState>.broadcast();
+        _progressController = StreamController<String>.broadcast();
 
-      // Set up TTS handlers
-      _flutterTts.setStartHandler(() {
-        _logger.d('TTS started');
-        _isSpeaking = true;
-        _isPaused = false;
-        _stateController?.add(TTSState.speaking);
+        // Set up TTS handlers
+        _flutterTts.setStartHandler(() {
+          _logger.d('TTS started');
+          _isSpeaking = true;
+          _isPaused = false;
+          _stateController?.add(TTSState.speaking);
+        });
+
+        _flutterTts.setCompletionHandler(() {
+          _logger.d('TTS completed');
+          _isSpeaking = false;
+          _isPaused = false;
+          _stateController?.add(TTSState.stopped);
+        });
+
+        _flutterTts.setCancelHandler(() {
+          _logger.d('TTS cancelled');
+          _isSpeaking = false;
+          _isPaused = false;
+          _stateController?.add(TTSState.stopped);
+        });
+
+        _flutterTts.setPauseHandler(() {
+          _logger.d('TTS paused');
+          _isPaused = true;
+          _stateController?.add(TTSState.paused);
+        });
+
+        _flutterTts.setContinueHandler(() {
+          _logger.d('TTS resumed');
+          _isPaused = false;
+          _stateController?.add(TTSState.speaking);
+        });
+
+        _flutterTts.setErrorHandler((message) {
+          _logger.e('TTS error: $message');
+          _isSpeaking = false;
+          _isPaused = false;
+          _stateController?.add(TTSState.error);
+        });
+
+        // Set up progress handler (if available)
+        _flutterTts.setProgressHandler((String text, int start, int end, String word) {
+          _logger.d('TTS progress: $word');
+          _progressController?.add(word);
+        });
+
+        // Configure default settings
+        await _configureDefaultSettings();
+
+        _isInitialized = true;
+        _logger.i('TTS service initialized successfully');
       });
-
-      _flutterTts.setCompletionHandler(() {
-        _logger.d('TTS completed');
-        _isSpeaking = false;
-        _isPaused = false;
-        _stateController?.add(TTSState.stopped);
-      });
-
-      _flutterTts.setCancelHandler(() {
-        _logger.d('TTS cancelled');
-        _isSpeaking = false;
-        _isPaused = false;
-        _stateController?.add(TTSState.stopped);
-      });
-
-      _flutterTts.setPauseHandler(() {
-        _logger.d('TTS paused');
-        _isPaused = true;
-        _stateController?.add(TTSState.paused);
-      });
-
-      _flutterTts.setContinueHandler(() {
-        _logger.d('TTS resumed');
-        _isPaused = false;
-        _stateController?.add(TTSState.speaking);
-      });
-
-      _flutterTts.setErrorHandler((message) {
-        _logger.e('TTS error: $message');
-        _isSpeaking = false;
-        _isPaused = false;
-        _stateController?.add(TTSState.error);
-      });
-
-      // Set up progress handler (if available)
-      _flutterTts.setProgressHandler((String text, int start, int end, String word) {
-        _logger.d('TTS progress: $word');
-        _progressController?.add(word);
-      });
-
-      // Configure default settings
-      await _configureDefaultSettings();
-
-      _isInitialized = true;
-      _logger.i('TTS service initialized successfully');
       
       return true;
     } catch (e) {

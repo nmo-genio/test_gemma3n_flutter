@@ -45,7 +45,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
     try {
       final systemInfo = await AIEdgeService.getSystemInfo();
       setState(() {
-        _isModelReady = systemInfo['isInitialized'] ?? false;
+        _isModelReady = systemInfo['modelReady'] ?? false;
         if (_isModelReady) {
           _response = 'Hello! I\'m GemmaTutor, your AI learning companion. How can I help you learn today?';
         } else {
@@ -81,7 +81,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> with SingleTickerProvid
       // Add educational context to the prompt
       final educationalPrompt = 'As GemmaTutor, an educational AI assistant, please help with this learning question: $prompt';
       
-      final result = await AIEdgeService.generateText(educationalPrompt);
+      final result = await AIEdgeService.generateTextWithMetrics(educationalPrompt);
 
       if (result['success'] == true) {
         setState(() {

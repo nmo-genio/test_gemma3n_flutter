@@ -8,11 +8,22 @@ class GemmaDownloadService {
   // static const String modelFileName = 'gemma_3n_e4b_model.tflite';
 
   static const String modelUrl = 'https://huggingface.co/google/gemma-3n-E4B-it-litert-lm-preview/resolve/main/gemma-3n-E4B-it-int4.litertlm';
-  static const String modelFileName = 'gemma_3n_e4b_int4.litertlm';
+  static const String modelFileName = 'gemma-3n-E4B-it-int4.litertlm';
 
 
   static Future<bool> isModelDownloaded() async {
     try {
+      // First, try to use the platform channel to check model status
+      try {
+        final result = await _channel.invokeMethod('isModelDownloaded');
+        if (result['isDownloaded'] == true) {
+          return true;
+        }
+      } catch (e) {
+        // Fall back to direct file check if platform channel fails
+      }
+      
+      // Direct file check as fallback
       final modelPath = await getModelPath();
       final file = File(modelPath);
       final exists = await file.exists();

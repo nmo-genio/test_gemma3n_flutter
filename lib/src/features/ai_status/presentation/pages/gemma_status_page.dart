@@ -58,8 +58,8 @@ class _GemmaStatusPageState extends ConsumerState<GemmaStatusPage> {
   }
 
   void _startPeriodicRefresh() {
-    _refreshTimer = Timer.periodic(const Duration(seconds: 2), (timer) {
-      if (mounted && _isInitialized) {
+    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (mounted && _isInitialized && !_isLoading) {
         _updateRealTimeMetrics();
       }
     });
@@ -69,19 +69,22 @@ class _GemmaStatusPageState extends ConsumerState<GemmaStatusPage> {
     if (!mounted) return;
 
     try {
-      final futures = await Future.wait([
-        AIEdgeService.getMemoryUsage(),
-        AIEdgeService.getPerformanceMetrics(),
-        AIEdgeService.getProcessorUtilization(),
-      ]);
+      // Run in microtask to avoid blocking the UI
+      await Future.microtask(() async {
+        final futures = await Future.wait([
+          AIEdgeService.getMemoryUsage(),
+          AIEdgeService.getPerformanceMetrics(),
+          AIEdgeService.getProcessorUtilization(),
+        ]);
 
-      if (mounted) {
-        setState(() {
-          _memoryUsage = futures[0];
-          _performanceMetrics = futures[1];
-          _processorInfo = futures[2];
-        });
-      }
+        if (mounted) {
+          setState(() {
+            _memoryUsage = futures[0];
+            _performanceMetrics = futures[1];
+            _processorInfo = futures[2];
+          });
+        }
+      });
     } catch (e) {
       _logger.e('Error updating real-time metrics', error: e);
     }
@@ -89,33 +92,49 @@ class _GemmaStatusPageState extends ConsumerState<GemmaStatusPage> {
 
   Future<void> _checkModelStatus() async {
     try {
-      final isDownloaded = await GemmaDownloadService.isModelDownloaded();
-      final systemInfo = await AIEdgeService.getSystemInfo();
-
+      // Show loading state immediately
       setState(() {
-        _isModelDownloaded = isDownloaded;
-        _systemInfo = systemInfo;
-        _isInitialized = systemInfo['isInitialized'] ?? false;
+        _status = 'Checking model status...';
+      });
 
-        if (isDownloaded && !_isInitialized) {
-          _status = 'Gemma 3n E4B downloaded - Ready to initialize';
-        } else if (isDownloaded && _isInitialized) {
-          _status = '✅ Gemma 3n E4B ready for inference';
-        } else {
-          _status = 'Gemma 3n E4B model not downloaded (~997MB required)';
+      // Run heavy operations in microtask to avoid blocking initial UI render
+      await Future.microtask(() async {
+        final isDownloaded = await GemmaDownloadService.isModelDownloaded();
+        final systemInfo = await AIEdgeService.getSystemInfo();
+
+        if (mounted) {
+          setState(() {
+            _isModelDownloaded = isDownloaded;
+            _systemInfo = systemInfo;
+            _isInitialized = systemInfo['modelReady'] ?? false;
+
+            if (isDownloaded && !_isInitialized) {
+              _status = 'Gemma 3n E4B downloaded - Ready to initialize';
+            } else if (isDownloaded && _isInitialized) {
+              _status = '✅ Gemma 3n E4B ready for inference';
+            } else {
+              _status = 'Gemma 3n E4B model not downloaded (~997MB required)';
+            }
+          });
+
+          // Only update metrics if model is initialized
+          if (_isInitialized) {
+            await _updateRealTimeMetrics();
+          }
+
+          // Auto-initialize if model is ready
+          if (isDownloaded && !_isInitialized) {
+            _initializeAIEdge();
+          }
         }
       });
-
-      await _updateRealTimeMetrics();
-
-      if (isDownloaded && !_isInitialized) {
-        _initializeAIEdge();
-      }
     } catch (e) {
       _logger.e('Error checking model status', error: e);
-      setState(() {
-        _status = 'Error checking model status: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _status = 'Error checking model status: $e';
+        });
+      }
     }
   }
 
@@ -192,7 +211,7 @@ class _GemmaStatusPageState extends ConsumerState<GemmaStatusPage> {
     });
 
     try {
-      final result = await AIEdgeService.generateText(prompt);
+      final result = await AIEdgeService.generateTextWithMetrics(prompt);
 
       if (result['success'] == true) {
         setState(() {

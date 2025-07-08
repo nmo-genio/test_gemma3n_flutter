@@ -8,6 +8,8 @@ import 'src/core/services/storage_service.dart';
 import 'src/core/services/error_handler_service.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/core/routing/app_router.dart';
+import 'services/ai_edge_service.dart';
+import 'services/gemma_download_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +27,10 @@ void main() async {
   ErrorHandlerService.init();
   logger.i('🛡️ Error handling initialized');
 
+  // Initialize AI model if available
+  await _initializeAIModelIfAvailable();
+  logger.i('🤖 AI model initialization check completed');
+
   // Request permissions early
   await _requestPermissions();
   logger.i('✅ Permissions requested');
@@ -38,6 +44,100 @@ void main() async {
       child: const MyApp(),
     ),
   );
+}
+
+/// Initialize AI model if it's already downloaded
+Future<void> _initializeAIModelIfAvailable() async {
+  final logger = FeatureLogger('AI_Init');
+  
+  try {
+    logger.i('🔍 Checking if Gemma 3n model is downloaded...');
+    
+    // Check if model is downloaded using both platform channel and direct file check
+    final isDownloaded = await GemmaDownloadService.isModelDownloaded();
+    final modelInfo = await GemmaDownloadService.getModelInfo();
+    final filePath = modelInfo['path'] as String? ?? '';
+    final fileExists = modelInfo['exists'] as bool? ?? false;
+    final modelSizeMB = modelInfo['modelSizeMB'] as double? ?? 0.0;
+    
+    logger.i('Model download status: $isDownloaded');
+    logger.i('Model file path: $filePath');
+    logger.i('Model file exists: $fileExists');
+    logger.i('Model file size: ${modelSizeMB.toStringAsFixed(1)} MB');
+    
+    // Check if model exists and is at least 900MB (for Gemma 3n E4B)
+    if (isDownloaded && fileExists && modelSizeMB > 900.0) {
+      logger.i('✅ Model found, initializing Gemma 3n...');
+      
+      // Initialize the AI model with the correct path
+      final initResult = await AIEdgeService.initialize(
+        useGPU: false, // Start with CPU for compatibility
+        maxTokens: 2048,
+        modelPath: filePath, // Use the actual model path
+      );
+      
+      if (initResult['success'] == true) {
+        logger.i('🎉 Gemma 3n model initialized successfully!');
+        logger.i('Backend: ${initResult['backend']}');
+        logger.i('Model path: ${initResult['modelPath']}');
+      } else {
+        logger.w('⚠️ Model initialization failed: ${initResult['message']}');
+        logger.w('Error: ${initResult['error']}');
+        
+        // Try alternative initialization approaches
+        await _tryAlternativeInitialization(logger, filePath);
+      }
+    } else {
+      if (!isDownloaded) {
+        logger.i('📥 Model not downloaded yet - initialization skipped');
+      } else if (!fileExists) {
+        logger.w('⚠️ Model file does not exist at path: $filePath');
+      } else {
+        logger.w('⚠️ Model file appears incomplete (${modelSizeMB.toStringAsFixed(1)} MB) - initialization skipped');
+        logger.w('Expected size: ~997MB for Gemma 3n E4B');
+      }
+    }
+    
+  } catch (e, stackTrace) {
+    logger.e('❌ Error during AI model initialization', error: e, stackTrace: stackTrace);
+    // Don't throw - app should continue even if AI init fails
+  }
+}
+
+/// Try alternative initialization approaches if the primary fails
+Future<void> _tryAlternativeInitialization(FeatureLogger logger, String filePath) async {
+  try {
+    logger.i('🔄 Trying alternative initialization approaches...');
+    
+    // Try with different GPU settings
+    final initResult2 = await AIEdgeService.initialize(
+      useGPU: true, // Try with GPU
+      maxTokens: 1024, // Reduce tokens for memory
+      modelPath: filePath,
+    );
+    
+    if (initResult2['success'] == true) {
+      logger.i('✅ Alternative initialization succeeded with GPU');
+      return;
+    }
+    
+    // Try with minimal settings
+    final initResult3 = await AIEdgeService.initialize(
+      useGPU: false,
+      maxTokens: 512, // Minimal token count
+      modelPath: filePath,
+    );
+    
+    if (initResult3['success'] == true) {
+      logger.i('✅ Alternative initialization succeeded with minimal settings');
+      return;
+    }
+    
+    logger.w('⚠️ All initialization attempts failed');
+    
+  } catch (e) {
+    logger.e('❌ Alternative initialization failed', error: e);
+  }
 }
 
 /// Request necessary permissions for the app
