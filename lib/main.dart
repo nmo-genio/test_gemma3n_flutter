@@ -71,7 +71,7 @@ Future<void> _initializeAIModelIfAvailable() async {
       
       // Initialize the AI model with the correct path
       final initResult = await AIEdgeService.initialize(
-        useGPU: false, // Start with CPU for compatibility
+        useGPU: true, // Enable GPU acceleration for better performance
         maxTokens: 2048,
         modelPath: filePath, // Use the actual model path
       );

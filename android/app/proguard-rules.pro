@@ -28,9 +28,9 @@
 # Keep LLM Inference API classes
 -keep class com.google.mediapipe.tasks.genai.llminference.** { *; }
 
-# Keep TensorFlow Lite classes used by LiteRT-LM
--keep class org.tensorflow.lite.** { *; }
--keep interface org.tensorflow.lite.** { *; }
+# Keep Google AI Edge LiteRT classes (modern replacement for TensorFlow Lite)
+-keep class com.google.ai.edge.litert.** { *; }
+-keep interface com.google.ai.edge.litert.** { *; }
 
 # Keep native methods and JNI interfaces
 -keepclasseswithmembernames class * {
@@ -51,7 +51,9 @@
 -dontwarn kotlinx.coroutines.**
 
 # ============ GEMMA MODEL RUNNER ============
-# Keep our custom GemmaLiteRunner class
+# Keep our custom GemmaLiteRTRunner class (real LiteRT implementation)
+-keep class com.example.test_gemma3n_flutter.GemmaLiteRTRunner { *; }
+# Keep legacy mock runner for backwards compatibility
 -keep class com.example.test_gemma3n_flutter.GemmaLiteRunner { *; }
 
 # ============ FLUTTER INTEGRATION ============

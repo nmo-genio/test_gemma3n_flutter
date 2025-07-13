@@ -4,6 +4,7 @@ repositories {
     google()
     mavenCentral()
     maven { url = uri("https://maven.google.com") }
+
 }
 
 plugins {
@@ -86,10 +87,6 @@ android {
                 "proguard-rules.pro"
             )
 
-            // Ensure model files aren't compressed (LiteRT-LM uses .task files)
-            aaptOptions {
-                noCompress("task", "litertlm")
-            }
         }
         debug {
             // Disable minification in debug for easier debugging
@@ -97,12 +94,12 @@ android {
             isShrinkResources = false
         }
 
+        packagingOptions {
+            resources.excludes += setOf("META-INF/**")
+        }
     }
     
-    // Increase memory for Gradle build process
-    dexOptions {
-        javaMaxHeapSize = "4g"
-    }
+
 }
 
 flutter {
@@ -118,20 +115,19 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 
-            // ============ GOOGLE LITERT SDK (Official) ============
-            // Core inference runtime (includes Interpreter and basic delegates)
-    implementation("com.google.ai.edge.litert:litert:1.4.0")
-    
-            // Optional GPU acceleration support
-    implementation("com.google.ai.edge.litert:litert-gpu:1.4.0")
-    
-            // Metadata util library
-    implementation("com.google.ai.edge.litert:litert-metadata:1.4.0")
-    
-            // High-level support utilities (e.g., data converters)
-    implementation("com.google.ai.edge.litert:litert-support:1.4.0")
 
-            // ============ PERFORMANCE & MONITORING ============
+    // ============ GOOGLE AI EDGE LITERT (Official v1.2.0) ============
+    implementation("com.google.ai.edge.litert:litert:1.4.0")            // Core runtime
+    implementation("com.google.ai.edge.litert:litert-api:1.4.0")        // Internal interpreter factories
+    implementation("com.google.ai.edge.litert:litert-support:1.4.0")    // Tensor utilities
+    implementation("com.google.ai.edge.litert:litert-metadata:1.4.0")   // Metadata extractor
+
+    // Optional: GPU acceleration
+    implementation("com.google.ai.edge.litert:litert-gpu:1.4.0")        // GPU delegate runtime
+    implementation("com.google.ai.edge.litert:litert-gpu-api:1.4.0")    // GPU API delegate
+
+
+    // ============ PERFORMANCE & MONITORING ============
             // For performance monitoring (optional)
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")

@@ -27,7 +27,7 @@ class MainActivity : FlutterActivity() {
         private const val REQUEST_PERMISSIONS = 1001
 
         // Model configuration
-        private const val MODEL_FILENAME = "gemma-3n-E4B-it-int4.litertlm"
+        private const val MODEL_FILENAME = "gemma-3n-E2B-it-int4.task"
         private const val MODEL_URL = "https://huggingface.co/google/gemma-3n-E4B-it-litert-lm-preview/resolve/main/gemma-3n-E4B-it-int4.litertlm"
         
         // HuggingFace authentication - Add your token here
@@ -90,8 +90,8 @@ class MainActivity : FlutterActivity() {
                 Log.i(TAG, "Use GPU: $useGPU")
                 Log.i(TAG, "Max tokens: $maxTokens")
 
-                // Initialize model with LiteRT-LM
-                val success = GemmaLiteRunner.initModel(
+                // Initialize model with real LiteRT implementation
+                val success = GemmaLiteRTRunner.initModel(
                     context = applicationContext,
                     modelPath = modelPath,
                     useGPU = useGPU,
@@ -135,8 +135,8 @@ class MainActivity : FlutterActivity() {
                 Log.d(TAG, "Prompt: ${prompt.take(100)}...")
                 Log.d(TAG, "Parameters - Temperature: $temperature, TopK: $topK, TopP: $topP")
 
-                // Generate text using LiteRT-LM
-                val generatedText = GemmaLiteRunner.generateText(
+                // Generate text using real LiteRT implementation
+                val generatedText = GemmaLiteRTRunner.generateText(
                     prompt = prompt,
                     temperature = temperature,
                     topK = topK,
@@ -157,7 +157,7 @@ class MainActivity : FlutterActivity() {
 
     private fun handleGetMemoryUsage(result: Result) {
         try {
-            val memoryInfo = GemmaLiteRunner.getMemoryUsage()
+            val memoryInfo = GemmaLiteRTRunner.getMemoryUsage()
             result.success(memoryInfo)
         } catch (e: Exception) {
             Log.e(TAG, "Error getting memory usage", e)
@@ -194,7 +194,7 @@ class MainActivity : FlutterActivity() {
                 "apiLevel" to Build.VERSION.SDK_INT,
                 "cpuArchitecture" to Build.SUPPORTED_ABIS.joinToString(","),
                 "timestamp" to SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date()),
-                "modelReady" to GemmaLiteRunner.isModelReady()
+                "modelReady" to GemmaLiteRTRunner.isModelReady()
             )
 
             result.success(systemInfo)
@@ -206,7 +206,7 @@ class MainActivity : FlutterActivity() {
 
     private fun handleDispose(result: Result) {
         try {
-            GemmaLiteRunner.dispose()
+            GemmaLiteRTRunner.dispose()
             Log.i(TAG, "🗑️ Gemma model disposed")
             result.success(true)
         } catch (e: Exception) {
@@ -359,7 +359,7 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         super.onDestroy()
         // Clean up resources
-        GemmaLiteRunner.dispose()
+        GemmaLiteRTRunner.dispose()
         mainScope.cancel()
     }
 }

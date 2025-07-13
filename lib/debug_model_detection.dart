@@ -19,10 +19,10 @@ class DebugModelDetection {
       
       // Test 2: Check both possible model file locations
       final locations = [
+        '${appDocsDir.path}/gemma-3n-E2B-it-int4.task',
         '${appDocsDir.path}/gemma-3n-E4B-it-int4.litertlm',
-        '${appDocsDir.path}/gemma_3n_e4b_int4.litertlm',
+        '/data/data/com.example.test_gemma3n_flutter/app_flutter/gemma-3n-E2B-it-int4.task',
         '/data/data/com.example.test_gemma3n_flutter/app_flutter/gemma-3n-E4B-it-int4.litertlm',
-        '/data/data/com.example.test_gemma3n_flutter/app_flutter/gemma_3n_e4b_int4.litertlm',
       ];
       
       for (final location in locations) {

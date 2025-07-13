@@ -8,7 +8,7 @@ class GemmaDownloadService {
   // static const String modelFileName = 'gemma_3n_e4b_model.tflite';
 
   static const String modelUrl = 'https://huggingface.co/google/gemma-3n-E4B-it-litert-lm-preview/resolve/main/gemma-3n-E4B-it-int4.litertlm';
-  static const String modelFileName = 'gemma-3n-E4B-it-int4.litertlm';
+  static const String modelFileName = 'gemma-3n-E2B-it-int4.task';
 
 
   static Future<bool> isModelDownloaded() async {

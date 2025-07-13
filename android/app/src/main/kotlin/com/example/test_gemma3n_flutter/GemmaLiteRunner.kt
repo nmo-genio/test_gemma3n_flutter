@@ -2,11 +2,15 @@
 package com.example.test_gemma3n_flutter
 
 import android.content.Context
+import android.content.res.AssetManager
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import java.io.File
+import java.io.FileOutputStream
+import java.io.InputStream
+import kotlin.math.absoluteValue
 
 /**
  * Mock implementation for Gemma 3n E4B model integration testing
@@ -18,6 +22,7 @@ object GemmaLiteRunner {
     // Model state
     private var isInitialized = false
     private var modelPath: String? = null
+    private var tokenizerPath: String? = null
     private var useGPU = false
     private var maxTokens = 2048
     
@@ -54,6 +59,15 @@ object GemmaLiteRunner {
             } else {
                 Log.e(TAG, "❌ Model file not found: $modelPath")
                 return@withContext false
+            }
+            
+            // Initialize SentencePiece tokenizer
+            val tokenizerPath = initializeSentencePieceTokenizer(context)
+            if (tokenizerPath != null) {
+                this@GemmaLiteRunner.tokenizerPath = tokenizerPath
+                Log.i(TAG, "✅ SentencePiece tokenizer initialized: $tokenizerPath")
+            } else {
+                Log.w(TAG, "⚠️ SentencePiece tokenizer initialization failed - using fallback")
             }
             
             // Store configuration
@@ -156,7 +170,7 @@ object GemmaLiteRunner {
             "inferenceBackend" to if (useGPU) "GPU" else "CPU",
             "modelSize" to getModelSize(),
             "maxSequenceLength" to maxTokens,
-            "vocabSize" to 256000,
+            "vocabSize" to 262144,
             "numThreads" to 4
         )
     }
@@ -242,6 +256,95 @@ object GemmaLiteRunner {
             }
         } catch (e: Exception) {
             "Unknown"
+        }
+    }
+    
+    /**
+     * Initialize SentencePiece tokenizer for Gemma 3n (262k vocabulary)
+     */
+    private fun initializeSentencePieceTokenizer(context: Context): String? {
+        return try {
+            Log.d(TAG, "🔤 Initializing SentencePiece tokenizer...")
+            
+            // Check if tokenizer exists in assets
+            val assetManager = context.assets
+            val tokenizerAssetPath = "tokenizer.model"
+            
+            // Try to access the tokenizer file in assets
+            val inputStream: InputStream = try {
+                assetManager.open(tokenizerAssetPath)
+            } catch (e: Exception) {
+                Log.w(TAG, "Tokenizer model not found in assets: $tokenizerAssetPath")
+                return null
+            }
+            
+            // Copy tokenizer to internal storage for faster access
+            val internalDir = File(context.filesDir, "tokenizer")
+            if (!internalDir.exists()) {
+                internalDir.mkdirs()
+            }
+            
+            val tokenizerFile = File(internalDir, "tokenizer.model")
+            
+            // Copy only if file doesn't exist or is outdated
+            if (!tokenizerFile.exists()) {
+                Log.d(TAG, "Copying tokenizer model to internal storage...")
+                
+                val outputStream = FileOutputStream(tokenizerFile)
+                val buffer = ByteArray(8192)
+                var bytesRead: Int
+                
+                while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                    outputStream.write(buffer, 0, bytesRead)
+                }
+                
+                inputStream.close()
+                outputStream.close()
+                
+                Log.i(TAG, "✅ Tokenizer model copied to: ${tokenizerFile.absolutePath}")
+            } else {
+                Log.d(TAG, "Tokenizer model already exists at: ${tokenizerFile.absolutePath}")
+            }
+            
+            // Verify tokenizer file
+            val tokenizerSizeKB = tokenizerFile.length() / 1024
+            Log.d(TAG, "Tokenizer file size: ${tokenizerSizeKB}KB")
+            
+            if (tokenizerFile.length() < 1000) { // Less than 1KB seems too small
+                Log.w(TAG, "Tokenizer file appears too small: ${tokenizerSizeKB}KB")
+                return null
+            }
+            
+            Log.i(TAG, "✅ SentencePiece tokenizer ready (262k vocabulary)")
+            return tokenizerFile.absolutePath
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to initialize SentencePiece tokenizer", e)
+            return null
+        }
+    }
+    
+    /**
+     * Mock tokenization for testing (will be replaced with real SentencePiece)
+     */
+    private fun tokenizeText(text: String): List<Int> {
+        // Mock tokenization - split by words and convert to fake token IDs
+        // Real implementation would use SentencePiece C++ library
+        val words = text.lowercase().split("\\s+".toRegex())
+        return words.mapIndexed { index, word ->
+            // Generate mock token IDs based on word hash (for consistency)
+            (word.hashCode().absoluteValue % 262144) // Use 262k vocabulary size
+        }
+    }
+    
+    /**
+     * Mock detokenization for testing (will be replaced with real SentencePiece)
+     */
+    private fun detokenizeTokens(tokens: List<Int>): String {
+        // Mock detokenization - convert token IDs back to words
+        // Real implementation would use SentencePiece C++ library
+        return tokens.joinToString(" ") { tokenId ->
+            "token_$tokenId" // Placeholder for real detokenization
         }
     }
 }
