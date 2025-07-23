@@ -1,6 +1,17 @@
+
 # test_gemma3n_flutter
 
-A new Flutter project.
+An educational AI assistant built with Flutter.
+
+## Overview
+
+This app demonstrates on‑device inference using Google's **Gemma 3n E4B** model.
+It downloads the model at runtime, initializes it through Google AI Edge and
+provides a simple chat style interface. Real‑time system metrics such as CPU and
+memory usage, as well as tokens per second, are displayed while interacting with
+the model. Riverpod is used for state management and the project is configured
+for Android, iOS, web and desktop targets (AI Edge features are available on
+mobile platforms).
 
 ## Getting Started
 
