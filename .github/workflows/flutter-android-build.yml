@@ -57,14 +57,14 @@ jobs:
         echo "keyAlias=release" >> android/key.properties
         echo "storeFile=key.jks" >> android/key.properties
 
-    - name: Build APK (Debug) - Skip analyze errors
-      run: flutter build apk --debug --no-analyze
+    - name: Build APK (Debug)
+      run: flutter build apk --debug --no-tree-shake-icons
 
-    - name: Build APK (Release) - Skip analyze errors  
-      run: flutter build apk --release --no-analyze
+    - name: Build APK (Release)  
+      run: flutter build apk --release --no-tree-shake-icons
 
-    - name: Build App Bundle (Release) - Skip analyze errors
-      run: flutter build appbundle --release --no-analyze
+    - name: Build App Bundle (Release)
+      run: flutter build appbundle --release --no-tree-shake-icons
 
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
