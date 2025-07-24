@@ -23,6 +23,13 @@ jobs:
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
+
+    - name: Install Gradle
+      run: |
+        wget https://services.gradle.org/distributions/gradle-8.0-bin.zip
+        unzip -q gradle-8.0-bin.zip
+        sudo mv gradle-8.0 /opt/gradle
+        echo "PATH=/opt/gradle/bin:$PATH" >> $GITHUB_ENV
       with:
         api-level: 34
         build-tools: '34.0.0'
@@ -46,14 +53,23 @@ jobs:
         flutter clean
         flutter pub get
 
-    - name: Fix Gradle properties
+    - name: Fix Gradle properties and setup wrapper
       run: |
         cd android
+        # Create gradle.properties with correct Java home
         echo "org.gradle.java.home=$JAVA_HOME" > gradle.properties
         echo "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8" >> gradle.properties
         echo "android.useAndroidX=true" >> gradle.properties
         echo "android.enableJetifier=true" >> gradle.properties
-        chmod +x gradlew
+        
+        # Generate Gradle wrapper if missing
+        if [ ! -f gradlew ]; then
+          echo "Gradle wrapper not found, regenerating..."
+          gradle wrapper --gradle-version=8.0
+        fi
+        
+        # Make gradlew executable
+        chmod +x gradlew || true
 
     - name: Analyze Flutter code (continue on error)
       run: flutter analyze --no-fatal-infos
